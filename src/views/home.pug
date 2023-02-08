@@ -1,0 +1,21 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(http-equiv="X-UA-Compatible", content="IE=edge")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    link(rel="stylesheet", href="https://unpkg.com/mvp.css@1.12/mvp.css")
+    title ZOOM
+  body 
+    heaer
+      h1 It works!
+    main
+      h2 HELLO
+      ul
+      form#nickname
+        input(type="text", placeholder="set your nickname", required, value="jane Doe")
+        button Save
+      form#message
+        input(type="text", placeholder="write a msg", required)
+        button Send
+    script(src="/public/js/app.js") 
