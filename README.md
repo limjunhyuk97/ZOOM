@@ -46,3 +46,53 @@
 - string 뿐만 아니라, 다른 타입의 값들도 서버로 보낼 수 있다.
 - 원하는 수만큼 서버로 데이터를 전송할 수 있다.
 - 가장 마지막 인자로 함수를 전달한다면, 서버측 처리가 모두 끝나고 **브라우저가 실행시켜야 하는 함수를 전달**할 수 있다.
+
+## Adapter
+
+<img width="1085" alt="image" src="https://user-images.githubusercontent.com/59442344/219069094-e2375eb4-1161-4420-a2db-27b61c06ab7e.png">
+
+- 서로 다른 서버와 연결되어 있는 클라이언트(어플리케이션)의 데이터를 동기화 시키는 것이 Adapter
+- 서버는 다수의 클라이언트들과 connection을 open한 상태여야 한다.
+- 만약 서버가 하나라면, 동기화와 관련된 문제가 없을 것이다.
+- 만약 서버가 여러 개라면, 그리고 서버들이 동일한 메모리 풀(memory pool)을 공유하지 않는다면 어플리케이션 간의 데이터 동기화가 불가능하다
+- 이런 경우 Adapter를 사용하여 데이터를 동기화 시켜준다
+- Adapter가 room이 몇개이고, 누가 연결되어 있는지 알려줄 수 있다
+
+```js
+wsServer.on("connection", (socket) => {
+  // wsServer.sockets.adapter로 server에 연결된 모든 socket과 생성된 모든 room 관련 데이터 확인할 수 있다.
+  console.log(wsServer.sockets.adapter);
+});
+```
+
+### 채팅방 정보 활용하기
+
+- private / public room 찾기
+  - sid 의 socketid와 rooms의 id 비교
+  - rooms (Map 자료형 / room) 데이터의 key, value 쌍 중 sids(Map 자료형 / socket id) 데이터에 존재하는 key 값과 일치하지 않는 key를 갖는 값이 있다면, 해당 방은 일반 public 채팅방이다.
+
+```js
+function publicRooms() {
+  const {
+    sockets: {
+      adapter: { sids, rooms },
+    },
+  } = wsServer;
+
+  return [...rooms.keys()].filter((room) => ![...sids.keys()].includes(room));
+}
+```
+
+### 새로운 채팅방 생성 알림
+
+```js
+socket.on("enter_room", (roomName, done) => {
+  socket.join(roomName);
+  done();
+  socket.to(roomName).emit("welcome", socket.nickname);
+  // 모든 이들에게 방 생성 알림 보내기
+  wsServer.sockets.emit("room_change", publicRooms());
+});
+```
+
+### 채팅방 인원수 세기

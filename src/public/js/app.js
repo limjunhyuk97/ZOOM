@@ -18,8 +18,10 @@ function showRoom() {
   room.hidden = false;
   const h3 = document.querySelector("h3");
   h3.textContent = roomName;
-  const form = room.querySelector("form");
-  form.addEventListener("submit", handlerMessageSubmit);
+  const msgForm = room.querySelector("#msg");
+  const nameForm = room.querySelector("#name");
+  msgForm.addEventListener("submit", handleMessageSubmit(msgForm));
+  nameForm.addEventListener("submit", handleNameSubmit(nameForm));
 }
 
 function exitRoom(event) {
@@ -33,7 +35,7 @@ function backendDone(msg) {
 }
 
 // 방 생성시의 이벤트
-function handlerRoomSubmit(event) {
+function handleRoomSubmit(event) {
   event.preventDefault();
   const input = form.querySelector("input");
 
@@ -46,17 +48,28 @@ function handlerRoomSubmit(event) {
   showRoom();
 }
 
+// 닉네임 설정 이벤트
+function handleNameSubmit(form) {
+  return (event) => {
+    event.preventDefault();
+    const input = form.querySelector("input");
+    socket.emit("send_nickname", input.value);
+  };
+}
+
 // 메시지 전송 시 이벤트
-function handlerMessageSubmit(event) {
-  event.preventDefault();
-  const input = room.querySelector("input");
-  socket.emit(
-    "send_message",
-    input.value,
-    roomName,
-    handleAddMessage(`YOU says : "${input.value}"`)
-  );
-  input.value = "";
+function handleMessageSubmit(form) {
+  return (event) => {
+    event.preventDefault();
+    const input = form.querySelector("input");
+    socket.emit(
+      "send_message",
+      input.value,
+      roomName,
+      handleAddMessage(`YOU says : "${input.value}"`)
+    );
+    input.value = "";
+  };
 }
 
 // 메시지 전송 시 채팅 생성
@@ -67,19 +80,38 @@ function handleAddMessage(message) {
   ul.appendChild(li);
 }
 
-form.addEventListener("submit", handlerRoomSubmit);
+form.addEventListener("submit", handleRoomSubmit);
 exitBtn.addEventListener("click", exitRoom);
-sendBtn.addEventListener("click", handlerMessageSubmit);
 
 // 브라우저에서 특정 event에 반응하도록 구현 - 이 경우에서는 다른 사람이 방에 입장한 경우
-socket.on("welcome", () => {
-  handleAddMessage("Fucker joined");
+socket.on("welcome", (userName, cnt) => {
+  const h3 = document.querySelector("h3");
+  h3.innerText = `Room ${roomName} (${cnt})`;
+  handleAddMessage(`${name} joined`);
 });
 
 // 특정 socket의 연결이 끊기면 bye 메시지 보내기
-socket.on("bye", () => {
-  handleAddMessage("BYE");
+socket.on("bye", (name, cnt) => {
+  const h3 = document.querySelector("h3");
+  h3.innerText = `Room ${roomName} (${cnt})`;
+  handleAddMessage(`${name} has left!`);
 });
 
 // 새로운 메시지 받을 경우 처리
-socket.on("receive_message", handleAddMessage);
+socket.on("receive_message", (msg, nickname) => {
+  handleAddMessage(`${nickname} : ${msg}`);
+});
+
+// 새로운 방 생성 알림 받기
+socket.on("room_change", (rooms) => {
+  const ul = welcome.querySelector("#roomlist");
+  ul.innerHTML = "";
+  rooms.forEach((room) => {
+    const li = document.createElement("li");
+    li.innerText = room;
+    ul.appendChild(li);
+  });
+});
+
+// 방 제거 알림 받기
+socket.on("disconnect", (msg) => console.log(msg));
