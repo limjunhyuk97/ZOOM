@@ -96,3 +96,10 @@ socket.on("enter_room", (roomName, done) => {
 ```
 
 ### 채팅방 인원수 세기
+
+```js
+// public room 참가사 수 구하기
+function countMembers(roomName) {
+  return wsServer.sockets.adapter.rooms.get(roomName)?.size;
+}
+```
