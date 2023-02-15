@@ -1,7 +1,8 @@
 import express from "express";
 import http from "http";
-import SocketIO from "socket.io";
+import { Server } from "socket.io";
 import { WebSocket } from "ws";
+import { instrument } from "@socket.io/admin-ui";
 
 //** express 프레임워크로 http 요청 듣기 */
 
@@ -52,7 +53,19 @@ const httpServer = http.createServer(app);
 // });
 
 //** SocketIo 사용하여 실시간 양방향 이벤트 기반 통신 가능한 서버 생성 */
-const wsServer = SocketIO(httpServer);
+// admin UI 확인
+const wsServer = new Server(httpServer, {
+  cors: {
+    origin: ["https://admin.socket.io"],
+    credentials: true,
+  },
+});
+
+instrument(wsServer, {
+  auth: false,
+  mode: "development",
+});
+
 wsServer.on("connection", (socket) => {
   wsServer.sockets.emit("room_change", publicRooms());
   // 초기 닉네임 설정
