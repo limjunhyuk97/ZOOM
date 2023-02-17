@@ -50,6 +50,10 @@ async function getMedia() {
 
 // mute event handler
 function handleMuteEvent(e) {
+  // Media Stream을 구성하는 audio track에 접근하여 각 track들을 mute 시킨다.
+  myStream
+    .getAudioTracks()
+    .forEach((track) => (track.enabled = !track.enabled));
   if (!muted) {
     mute.innerText = "unmuted";
     muted = true;
@@ -61,6 +65,10 @@ function handleMuteEvent(e) {
 
 // camera off event handler
 function handleCameraClick(e) {
+  // Media Stream을 구성하는 video track에 접근하여 각 track들을 off 시킨다.
+  myStream
+    .getVideoTracks()
+    .forEach((track) => (track.enabled = !track.enabled));
   if (cameraOff) {
     camera.innerText = "turn camera ON";
     cameraOff = false;
