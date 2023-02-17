@@ -4,7 +4,26 @@ const myFace = document.querySelector("#myFace");
 const mute = document.querySelector("#mute");
 const camera = document.querySelector("#camera");
 
-// 영상, 소리의 데이터 스트림
+// 영상, 소리의 데이터 스트림 (Media Stream)
+// Media Stream API를 활용하면, Media Stream을 다룰 수 있다.
+// - Media Stream API는 WebRTC와 연관된 API이다.
+// - Media Stream API는 다음으로 구성된다.
+//    - Media Stream
+//    - Media Stream Track (Stream을 구성하는 Track)
+//      - video, audio, subtitle 등으로 구성될 수 있다.
+//      - channel로 구성된다. (media stream의 최소 단위 / 예를 들어 스테레오 사운드에서 왼쪽 사운드와 같이)
+//    - 데이터 형식
+//    - 비동기 요청 결과로서 성공 / 에러 callback
+//    - process중 발생하는 event
+// - Media Stream 객체는 하나의 input, 하나의 output을 갖는다.
+//    - input을 기준으로 2가지로 나뉜다.
+//      - local Media Stream : navigator.mediaDevices.getuserMedia()로 생성한 MediaStream 객체
+//        - source input을 유저의 카메라나, 마이크중 하나로 갖는다.
+//      - non-local Media Stream : network에서 받아온 stream / WebRTC의 RTCPeerConnection으로 받아온 Media Stream / Web Audio API의 MediaStreamAudioDestinationNode 사용하여 생성한 Media Stream
+//    - Media Stream의 output은 "consumer"에 연결된다.
+//      - consumer로 <video> <audio> 태그 사용 가능
+//      - consumer로 WebRTC의 RTCPeerConection 사용 가능
+//      - consumer로 Web Audio API의 MediaStreamAudioSourceNode 사용 가능
 let myStream;
 
 // 마이크, 카메라 상태
