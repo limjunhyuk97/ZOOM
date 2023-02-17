@@ -10,8 +10,8 @@ html(lang="en")
     header
       h1 ZOOM
     main
-      div Hello
-
+      video#myFace(autoplay, playsinline, width="400", height="400")
+      
     script(src="/socket.io/socket.io.js")
     script(src="/public/js/zoom.js") 
     //- socket.io 코드를 front, back 모두에서 사용가능하도록 지정해주어야 한다.
