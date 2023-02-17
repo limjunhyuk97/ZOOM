@@ -7,26 +7,11 @@ html(lang="en")
     link(rel="stylesheet", href="https://unpkg.com/mvp.css@1.12/mvp.css")
     title ZOOM
   body 
-    heaedr
+    header
       h1 ZOOM
     main
-      div#welcome
-        form(action="")
-          input(placeholder="room name", required, type="text")
-          button Enter Room
-        ul#roomlist Open Rooms:
-      div#room
-        h3
-        ul
-        form#name
-          input(type="text" placeholder="nickname", required)
-          button Save
-        form#msg
-          input(placeholder="message", required, type="text")
-          div.room--btn-wrapper
-            button#send--btn Send
-            button#exit--btn Exit
+      div Hello
 
     script(src="/socket.io/socket.io.js")
-    script(src="/public/js/app.js") 
+    script(src="/public/js/zoom.js") 
     //- socket.io 코드를 front, back 모두에서 사용가능하도록 지정해주어야 한다.
