@@ -1,10 +1,17 @@
 const socket = io();
 
 const myFace = document.querySelector("#myFace");
+const mute = document.querySelector("#mute");
+const camera = document.querySelector("#camera");
 
 // 영상, 소리의 데이터 스트림
 let myStream;
 
+// 마이크, 카메라 상태
+let muted = false;
+let cameraOff = false;
+
+// 영상 스트림을 받아서 video 태그의 srcObject에 넣어주기
 async function getMedia() {
   try {
     // BOM (Browser Object Model 에서 접근 가능한 객체들)
@@ -22,4 +29,33 @@ async function getMedia() {
   }
 }
 
+// mute event handler
+function handleMuteEvent(e) {
+  if (!muted) {
+    mute.innerText = "unmuted";
+    muted = true;
+  } else {
+    mute.innerText = "muted";
+    muted = false;
+  }
+}
+
+// camera off event handler
+function handleCameraClick(e) {
+  if (cameraOff) {
+    camera.innerText = "turn camera ON";
+    cameraOff = false;
+  } else {
+    camera.innerText = "turn camera OFF";
+    cameraOff = true;
+  }
+}
+
+// media 스트리밍 시작
 getMedia();
+
+// 음소거 버튼 핸들러 장착
+mute.addEventListener("click", handleMuteEvent);
+
+// 비디오 끄기 핸들러 장착
+camera.addEventListener("click", handleCameraClick);
