@@ -103,3 +103,29 @@ function countMembers(roomName) {
   return wsServer.sockets.adapter.rooms.get(roomName)?.size;
 }
 ```
+
+# WebRTC
+
+## WEBRTC 란?
+
+- web real time communication을 가능하게 해주는 기술이다.
+- P2P 방식을 사용한다.
+  - "client -> server -> 다른 client들에게 뿌리기(Broadcast)" 의 Web-Socket 방식이 아니다.
+  - "client <-> client" 의 방식이다.
+- signaling을 위한 server가 필요하다.
+- video, audio, text 모두 송수신 가능하다.
+
+## Signaling 과 서버가 필요한 이유?
+
+<img width="806" alt="image" src="https://user-images.githubusercontent.com/59442344/219947649-79796e39-41b4-48cf-817a-8cd39ae70f6c.png">
+
+- P2P 연결을 위해 필요하다.
+  - 상대 브라우저가 어디있는지 알아야 한다.
+  - 상대 컴퓨터의 IP 주소를 알아야 한다.
+  - 상대 프로그램의 포트번호도 알아야 한다.
+- 즉, signaling을 위한 server는 상대 client들이 어디있는지 + a의 정보를 다른 client들에게 전달해주기 위해 필요
+  - 자신의 IP 주소, port 번호 (위치 정보) ..
+  - settings
+  - configurations
+
+## WEBRTC의 문제

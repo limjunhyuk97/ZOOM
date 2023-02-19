@@ -3,6 +3,7 @@ const socket = io();
 const myFace = document.querySelector("#myFace");
 const mute = document.querySelector("#mute");
 const camera = document.querySelector("#camera");
+const camerasSelect = document.querySelector("#cameras");
 
 //** 영상, 소리의 데이터 스트림 (Media Stream) */
 // Media Stream API를 활용하면, Media Stream을 다룰 수 있다.
@@ -30,18 +31,52 @@ let myStream;
 let muted = false;
 let cameraOff = false;
 
-// 영상 스트림을 받아서 video 태그의 srcObject에 넣어주기
-async function getMedia() {
+// 카메라 종류 선택 가능하게 만들기
+// 컴퓨터에 연결되어 있는 모든 (미디어)장치 정보를 담고있는 객체의 배열 가져오기
+// 정보에는 'kind'라는 프로퍼티가 존재 -> 해당 프로퍼티의 값으로 'audioinput', 'videoinput' 등이 존재한다.
+async function getCameras() {
   try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cameras = devices.filter((device) => device.kind === "videoinput");
+    const currentCamera = myStream.getVideoTracks()[0];
+    cameras.forEach((camera) => {
+      const option = document.createElement("option");
+      // [InputDeviceInfo] 객체 내의 (deviceId, label) 속성 = (기기 고유 id, 기기명)
+      option.value = camera.deviceId;
+      option.innerText = camera.label;
+      // 현재 카메라와 같은 카메라 option이라면, 선택된 것으로 보여줘라
+      if (currentCamera.label === camera.label) option.selected = true;
+      camerasSelect.appendChild(option);
+    });
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+// 영상 보여주기
+// 영상 스트림(Media Stream)을 받아서 video 태그의 srcObject에 넣어주기
+async function getMedia(deviceId) {
+  try {
+    // 초기 영상 시트림 정보
+    const initialConstraints = {
+      audio: true,
+      video: { facingMode: "user" },
+    };
+    // 특정 비디오(카메라 장치) 연결
+    // {exact : id-string}으로 지정하면, 특정 비디오 기기가 없을 경우 영상 입력 안됨
+    const cameraConstraints = {
+      audio: true,
+      video: { deviceId: { exact: deviceId } },
+    };
+
     //** BOM (Browser Object Model 에서 접근 가능한 객체들) 에서 navigator 통해 Media Strema 추출하기 */
     // navigator 객체 : 브라우저에 대한 정보 제공
     // -> mediaDevices 프로퍼티 : 카메라, 마이크, 화면 공유 처럼 현재 연결된 미디어 입력장치에 접근할 수 있는 MediaDevices 객체 반환
     // -> MediaDevices.getUserMedia : 사용자에게 권한 요청 후, 카메라, 오디오 각각 또는 모두 활성화  => 입력 데이터를 비디오 / 오디오 트랙으로 포함한 MediaStream 객체 반환
     // -> mediaStream : media content의 stream이다.
-    myStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: true,
-    });
+    myStream = await navigator.mediaDevices.getUserMedia(
+      deviceId ? cameraConstraints : initialConstraints
+    );
     myFace.srcObject = myStream;
   } catch (e) {
     console.log(e);
@@ -50,7 +85,7 @@ async function getMedia() {
 
 // mute event handler
 function handleMuteEvent(e) {
-  // Media Stream을 구성하는 audio track에 접근하여 각 track들을 mute 시킨다.
+  // Media Stream을 구성하는 audio track 들에 접근하여 각 track들을 mute 시킨다.
   myStream
     .getAudioTracks()
     .forEach((track) => (track.enabled = !track.enabled));
@@ -65,7 +100,8 @@ function handleMuteEvent(e) {
 
 // camera off event handler
 function handleCameraClick(e) {
-  // Media Stream을 구성하는 video track에 접근하여 각 track들을 off 시킨다.
+  console.log(myStream.getVideoTracks());
+  // Media Stream을 구성하는 video track 들에 접근하여 각 track들을 off 시킨다.
   myStream
     .getVideoTracks()
     .forEach((track) => (track.enabled = !track.enabled));
@@ -78,11 +114,24 @@ function handleCameraClick(e) {
   }
 }
 
-// media 스트리밍 시작
-getMedia();
+// 카메라 변경 (media device id로 변경해야 한다)
+async function handleCameraChange(e) {
+  await getMedia(camerasSelect.value);
+}
 
-// 음소거 버튼 핸들러 장착
-mute.addEventListener("click", handleMuteEvent);
+(async () => {
+  // media 스트리밍 시작
+  await getMedia();
 
-// 비디오 끄기 핸들러 장착
-camera.addEventListener("click", handleCameraClick);
+  // 연결된 미디어 장치들의 정보를 얻어온다.
+  await getCameras();
+
+  // 음소거 버튼 핸들러 장착
+  mute.addEventListener("click", handleMuteEvent);
+
+  // 비디오 끄기 핸들러 장착
+  camera.addEventListener("click", handleCameraClick);
+
+  // 카메라 변경
+  camerasSelect.addEventListener("input", handleCameraChange);
+})();
