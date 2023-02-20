@@ -4,8 +4,11 @@ const myFace = document.querySelector("#myFace");
 const mute = document.querySelector("#mute");
 const camera = document.querySelector("#camera");
 const camerasSelect = document.querySelector("#cameras");
+const welcome = document.querySelector("#welcome");
+const welcomeForm = welcome.querySelector("form");
+const call = document.querySelector("#call");
 
-//** 영상, 소리의 데이터 스트림 (Media Stream) */
+//** 영상, 소리의 로컬 데이터 스트림 (Media Stream) */
 // Media Stream API를 활용하면, Media Stream을 다룰 수 있다.
 // - Media Stream API는 WebRTC와 연관된 API이다.
 // - Media Stream API는 다음으로 구성된다.
@@ -27,9 +30,18 @@ const camerasSelect = document.querySelector("#cameras");
 //      - consumer로 Web Audio API의 MediaStreamAudioSourceNode 사용 가능
 let myStream;
 
+//** Peer Connection */
+let myPeerConnection;
+
 // 마이크, 카메라 상태
 let muted = false;
 let cameraOff = false;
+
+// 참가한 방이름
+let roomName;
+
+// call 가리기 (초기 동영상화면 가리기)
+call.hidden = true;
 
 // 카메라 종류 선택 가능하게 만들기
 // 컴퓨터에 연결되어 있는 모든 (미디어)장치 정보를 담고있는 객체의 배열 가져오기
@@ -83,6 +95,28 @@ async function getMedia(deviceId) {
   }
 }
 
+// 방에 입장 시 실행하는 함수
+async function startMedia() {
+  welcome.hidden = true;
+  call.hidden = false;
+  await getMedia();
+  // RTC 연결을 생성한다.
+  makeConnection();
+}
+
+// 방 입장 핸들러
+async function handleWelcomeSubmit(e) {
+  e.preventDefault();
+  const input = welcomeForm.querySelector("input");
+  roomName = input.value;
+  socket.emit("join_room", input.value, startMedia);
+}
+
+// 카메라 변경 (media device id로 변경해야 한다)
+async function handleCameraChange(e) {
+  await getMedia(camerasSelect.value);
+}
+
 // mute event handler
 function handleMuteEvent(e) {
   // Media Stream을 구성하는 audio track 들에 접근하여 각 track들을 mute 시킨다.
@@ -114,11 +148,36 @@ function handleCameraClick(e) {
   }
 }
 
-// 카메라 변경 (media device id로 변경해야 한다)
-async function handleCameraChange(e) {
-  await getMedia(camerasSelect.value);
-}
+//** Socket Code */
+socket.on("welcome", async () => {
+  // [WEBRTC 2] 다른 브라우저가 room에 참가할 경우 + 각 브라우저들이 새로 참가한 브라우저에게 + offer를 제공
+  //  - 다른 브라우저에게 참가 가능한 초대장 제공
+  //  - 실시간 세션에 대한 정보이다.
+  //  - offer로 연결을 만들어야 한다.
+  const offer = await myPeerConnection.createOffer();
+  // [WEBRTC 3] createOffer()로 만든 offer로 로컬에서 연결을 생성한다.
+  myPeerConnection.setLocalDescription(offer);
+  // [WEBRTC 4] 나 빼고 같은 room에 들어와 있는 다른 브라우저들에게 offer를 보낸다.
+  //  - offer를 주고 받은 뒤에는 각 브라우저들이
+  socket.emit("offer", offer, roomName);
+});
 
+// [WERTC 5] 브라우저의 offer 수신
+socket.on("offer", (offer) => {});
+//** Socket Code */
+
+//** RTC Code */
+function makeConnection() {
+  // [WEBRTC 0] P2P 연결 생성
+  myPeerConnection = new RTCPeerConnection();
+  // [WEBRTC 1] 각자 브라우저에서 연결 내에 로컬 데이터 스트림 트랙 추가 (getUserMedia() + addStream() / addTrack())
+  myStream
+    .getTracks()
+    .forEach((track) => myPeerConnection.addTrack(track, myStream));
+}
+//** RTC Code */
+
+// 함수 실행
 (async () => {
   // media 스트리밍 시작
   await getMedia();
@@ -134,4 +193,7 @@ async function handleCameraChange(e) {
 
   // 카메라 변경
   camerasSelect.addEventListener("input", handleCameraChange);
+
+  // 방 입장 handler
+  welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 })();

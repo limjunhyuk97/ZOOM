@@ -106,7 +106,7 @@ function countMembers(roomName) {
 
 # WebRTC
 
-## WEBRTC 란?
+## WebRTC 란?
 
 - web real time communication을 가능하게 해주는 기술이다.
 - P2P 방식을 사용한다.
@@ -128,4 +128,6 @@ function countMembers(roomName) {
   - settings
   - configurations
 
-## WEBRTC의 문제
+## WebRTC를 이용한 화상채팅 연결 과정
+
+<img width="747" alt="image" src="https://user-images.githubusercontent.com/59442344/220119381-f2407051-1998-4a94-9ac0-f34eeb2690ef.png">
