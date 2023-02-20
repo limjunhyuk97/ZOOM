@@ -131,3 +131,5 @@ function countMembers(roomName) {
 ## WebRTC를 이용한 화상채팅 연결 과정
 
 <img width="747" alt="image" src="https://user-images.githubusercontent.com/59442344/220119381-f2407051-1998-4a94-9ac0-f34eeb2690ef.png">
+
+### negotiating pattern

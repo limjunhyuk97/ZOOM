@@ -99,6 +99,7 @@ async function getMedia(deviceId) {
 async function startMedia() {
   welcome.hidden = true;
   call.hidden = false;
+  // video 태그에 Media Stream 객체 연결
   await getMedia();
   // RTC 연결을 생성한다.
   makeConnection();
@@ -109,6 +110,12 @@ async function handleWelcomeSubmit(e) {
   e.preventDefault();
   const input = welcomeForm.querySelector("input");
   roomName = input.value;
+  // socket.emit("join_room", input.value, startMedia);
+  // 위의 코드는 네트워크 요청-응답이 모두 발생한 뒤에 startMedia()를 실행시킴으로써 : join_room -> welcome -> offer -> offer 수령
+  // RTCPeerConnection으로 myPeerConnection 객체를 생성하기 이전에 offer를 받게 되는 문제를 만들 수 있다.
+
+  // 아래와 같이 RTCPeerConnection 객체 생성 후 socket event emit
+  await startMedia();
   socket.emit("join_room", input.value, startMedia);
 }
 
@@ -148,22 +155,53 @@ function handleCameraClick(e) {
   }
 }
 
+// ice-candidate handler
+function handleIce(data) {
+  console.log("received ice candidates");
+  console.log(data);
+}
+
 //** Socket Code */
+// 입장 -> 다른 참가자들이 offer 새로 생성 + offer로 연결 설정 + 뿌리기 시작
 socket.on("welcome", async () => {
+  console.log("send an offer");
   // [WEBRTC 2] 다른 브라우저가 room에 참가할 경우 + 각 브라우저들이 새로 참가한 브라우저에게 + offer를 제공
   //  - 다른 브라우저에게 참가 가능한 초대장 제공
-  //  - 실시간 세션에 대한 정보이다.
+  //  - SessionDescription 객체이다.
   //  - offer로 연결을 만들어야 한다.
   const offer = await myPeerConnection.createOffer();
   // [WEBRTC 3] createOffer()로 만든 offer로 로컬에서 연결을 생성한다.
+  //  - 로컬 종단의 속성과, 로컬 종단에서 주고 받고자 하는 media format의 정보를 담고 있는 session description으로 connection 설정을 수행한다.
+  //  - negotiation이 모두 완료되기 전까지 합의된 connection 설정의 효력은 없다.
   myPeerConnection.setLocalDescription(offer);
   // [WEBRTC 4] 나 빼고 같은 room에 들어와 있는 다른 브라우저들에게 offer를 보낸다.
-  //  - offer를 주고 받은 뒤에는 각 브라우저들이
   socket.emit("offer", offer, roomName);
 });
 
-// [WERTC 5] 브라우저의 offer 수신
-socket.on("offer", (offer) => {});
+// [WEBRTC 5] 브라우저의 offer 수신
+// offer 수신 -> answer 새로 생성 + answer로 연결 설정 + 뿌리기
+socket.on("offer", async (offer) => {
+  console.log("received an offer");
+  // [WEBTRC 6] 다른 브라우저에서 받은 offer를 바탕으로 연결 생성
+  //  - 원격 종단의 속성과, 원격 종단에서 주고 받고자 하는 media format의 정보를 담고 있는 session description으로 connection 설정을 수행한다.
+  //  - negotiation이 모두 완료되기 전까지 합의된 connection 설정의 효력은 없다.
+  myPeerConnection.setRemoteDescription(offer);
+  // [WEBRTC 7] answer 생성 (session description)
+  const answer = await myPeerConnection.createAnswer();
+  // [WEBRTC 8] answer 로 setLocalDescription 함수 호출하여 connection 설정 수행
+  myPeerConnection.setLocalDescription(answer);
+  socket.emit("answer", answer);
+  console.log("send an answer");
+});
+
+// [WEBRTC 9] 브라우저의 answer 수신
+// answer 수신 -> answer로 연결 설정
+socket.on("answer", (answer) => {
+  console.log("received an answer");
+  // [WEBRTC 10] 다른 브라우저에서 받은 answer 바탕으로 연결 완료
+  myPeerConnection.setRemoteDescription(answer);
+});
+
 //** Socket Code */
 
 //** RTC Code */
@@ -174,6 +212,13 @@ function makeConnection() {
   myStream
     .getTracks()
     .forEach((track) => myPeerConnection.addTrack(track, myStream));
+  // [WEBRTC 11] offer + answer 송수신 과정이 끝나고 나면 icecandidate event가 발생한다.
+  //  - ICE(Interactive Connectivity Establishment) candidate은 종단간 연결 위해 필요한 프로토콜과 라우팅에 관한 정보를 묘사한다.
+  //  - WebRTC P2P 연결이 시작될 때 연결을 위한 여러 후보들이 제안되고, 이 중 가장 좋은 하나로 상호 동의 끝에 연결이 설정된다.
+  //  - 이때 candidate의 detail 정보를 활용한다.
+  //  - 해당 ice candidate들은 브라우저에서 만들어진 것일 뿐이다. ice candidate들이 만들어진 것을 eventListener로 들은 것이다.
+  //  - eventListener로 ice candidate들을 알아냈다면 이를 socket 통신으로 또 다른 브라우저들에 전파시켜주어야 한다.
+  myPeerConnection.addEventListener("icecandidate", handleIce);
 }
 //** RTC Code */
 
