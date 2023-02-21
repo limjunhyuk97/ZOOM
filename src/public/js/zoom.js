@@ -235,7 +235,26 @@ socket.on("ice", (ice) => {
 //** RTC Code */
 function makeConnection() {
   // [WEBRTC 0] P2P 연결 생성
-  myPeerConnection = new RTCPeerConnection();
+  myPeerConnection = new RTCPeerConnection({
+    iceServers: [
+      {
+        urls: ["stun:ntk-turn-2.xirsys.com"],
+      },
+      {
+        username:
+          "uhKcSpeUmbIRJRo4Fxj1JmfGEaRL0LKt-bGpCsZjutDxLrCkjybiONA39zzMKiUiAAAAAGP0LitqdW45Nw==",
+        credential: "8a766a5e-b190-11ed-a385-0242ac120004",
+        urls: [
+          "turn:ntk-turn-2.xirsys.com:80?transport=udp",
+          "turn:ntk-turn-2.xirsys.com:3478?transport=udp",
+          "turn:ntk-turn-2.xirsys.com:80?transport=tcp",
+          "turn:ntk-turn-2.xirsys.com:3478?transport=tcp",
+          "turns:ntk-turn-2.xirsys.com:443?transport=tcp",
+          "turns:ntk-turn-2.xirsys.com:5349?transport=tcp",
+        ],
+      },
+    ],
+  });
   // [WEBRTC 1] 각자 브라우저에서 연결 내에 로컬 데이터 스트림 트랙 추가 (getUserMedia() + addStream() / addTrack())
   myStream
     .getTracks()

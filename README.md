@@ -133,3 +133,15 @@ function countMembers(roomName) {
 <img width="747" alt="image" src="https://user-images.githubusercontent.com/59442344/220119381-f2407051-1998-4a94-9ac0-f34eeb2690ef.png">
 
 ### negotiating pattern
+
+### STUN server
+
+- 장치 연결 시에 상대방의 공용주소를 알려주는 서버이다.
+
+### Data Channel
+
+- Data Channel을 생성하면 image, file, text 전송, game 플레이 등을 P2P로 가능하게 만들 수 있다.
+
+## WebRTC의 단점
+
+- Peer가 너무 많아질 경우 속도가 느려질 수 있다.
