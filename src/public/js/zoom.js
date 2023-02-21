@@ -122,6 +122,16 @@ async function handleWelcomeSubmit(e) {
 // 카메라 변경 (media device id로 변경해야 한다)
 async function handleCameraChange(e) {
   await getMedia(camerasSelect.value);
+  // myStream에서 현재 내가 선택한 videoTrack을 선택한다.
+  // myPeerConnection 객체에서 P2P로 연결되어 있는 video track을 선택한다.
+  // P2P로 연결된 video track을 replaceTrack() 메서드를 통해 myStream에 등록된 videoTrack으로 교체한다.
+  if (myPeerConnection) {
+    const curVideoTrack = myStream.getVideoTracks()[0];
+    const newVideoTrack = myPeerConnection
+      .getSenders()
+      .find((sender) => sender.track.kind === "video");
+    newVideoTrack.replaceTrack(curVideoTrack);
+  }
 }
 
 // mute event handler
