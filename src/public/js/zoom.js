@@ -157,8 +157,20 @@ function handleCameraClick(e) {
 
 // ice-candidate handler
 function handleIce(data) {
-  console.log("received ice candidates");
-  console.log(data);
+  console.log("get ice candidates");
+  // [WEBRTC 11] ICE candidate event 발생 감지 + ICE candidate socket.io를 통해 전송
+  socket.emit("ice", data.candidate, roomName);
+  console.log("send ice candidates");
+}
+
+// stream add handler
+function handleAddStream(data) {
+  console.log("got an event(stream) from my peer");
+  console.log("Peer stream : ", data.stream);
+  console.log("My Stream", myStream);
+
+  const peersStream = document.querySelector("#peerFace");
+  peersStream.srcObject = data.stream;
 }
 
 //** Socket Code */
@@ -190,7 +202,7 @@ socket.on("offer", async (offer) => {
   const answer = await myPeerConnection.createAnswer();
   // [WEBRTC 8] answer 로 setLocalDescription 함수 호출하여 connection 설정 수행
   myPeerConnection.setLocalDescription(answer);
-  socket.emit("answer", answer);
+  socket.emit("answer", answer, roomName);
   console.log("send an answer");
 });
 
@@ -200,6 +212,12 @@ socket.on("answer", (answer) => {
   console.log("received an answer");
   // [WEBRTC 10] 다른 브라우저에서 받은 answer 바탕으로 연결 완료
   myPeerConnection.setRemoteDescription(answer);
+});
+
+// [WEBRTC 12] ICE candidate 수신 + 추가
+socket.on("ice", (ice) => {
+  console.log("received candidates");
+  myPeerConnection.addIceCandidate(ice);
 });
 
 //** Socket Code */
@@ -212,13 +230,16 @@ function makeConnection() {
   myStream
     .getTracks()
     .forEach((track) => myPeerConnection.addTrack(track, myStream));
-  // [WEBRTC 11] offer + answer 송수신 과정이 끝나고 나면 icecandidate event가 발생한다.
+  // [WEBRTC 0] offer + answer 송수신 과정이 끝나고 나면 icecandidate event가 발생한다.
   //  - ICE(Interactive Connectivity Establishment) candidate은 종단간 연결 위해 필요한 프로토콜과 라우팅에 관한 정보를 묘사한다.
   //  - WebRTC P2P 연결이 시작될 때 연결을 위한 여러 후보들이 제안되고, 이 중 가장 좋은 하나로 상호 동의 끝에 연결이 설정된다.
   //  - 이때 candidate의 detail 정보를 활용한다.
   //  - 해당 ice candidate들은 브라우저에서 만들어진 것일 뿐이다. ice candidate들이 만들어진 것을 eventListener로 들은 것이다.
   //  - eventListener로 ice candidate들을 알아냈다면 이를 socket 통신으로 또 다른 브라우저들에 전파시켜주어야 한다.
   myPeerConnection.addEventListener("icecandidate", handleIce);
+  // [WEBRTC 0] icecandidate를 주고받는 과정이 끝나면 addstream event가 발생한다.
+  //  - addstream event로 peer의 data stream을 받아올 수 있다.
+  myPeerConnection.addEventListener("addstream", handleAddStream);
 }
 //** RTC Code */
 
