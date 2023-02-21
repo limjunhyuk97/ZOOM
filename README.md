@@ -144,4 +144,4 @@ function countMembers(roomName) {
 
 ## WebRTC의 단점
 
-- Peer가 너무 많아질 경우 속도가 느려질 수 있다.
+- Peer가 너무 많아질 경우 속도가 느려질 수 있다. (Video와 Audio의 경우)
